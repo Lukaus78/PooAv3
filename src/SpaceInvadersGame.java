@@ -47,7 +47,7 @@ public class SpaceInvadersGame extends JPanel implements ActionListener, KeyList
     private List<Pontuacao> tabelaClassificacao;
 
     public SpaceInvadersGame() {
-        jogador = new Player();
+        jogador = new Player(LARGURA_TELA / 2 - LARGURA_JOGADOR / 2, ALTURA_TELA - ALTURA_JOGADOR - 20);
         inimigos = new ArrayList<>();
         projeteis = new ArrayList<>();
         temporizador = new Timer(1000 / 60, this);
@@ -282,116 +282,133 @@ public class SpaceInvadersGame extends JPanel implements ActionListener, KeyList
         g.drawString("Você venceu! Pressione ENTER para jogar novamente", LARGURA_TELA / 4, ALTURA_TELA / 2);
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Space Invaders");
-            SpaceInvadersGame jogo = new SpaceInvadersGame();
-            frame.add(jogo);
-            frame.setSize(LARGURA_TELA, ALTURA_TELA);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setVisible(true);
-        });
-    }
-
-    class Player {
+    abstract class GameObject {
         private int x;
         private int y;
 
-        public Player() {
-            x = LARGURA_TELA / 2 - LARGURA_JOGADOR / 2;
-            y = ALTURA_TELA - ALTURA_JOGADOR - 20;
-        }
-
-        public void mover() {
-            if (moverEsquerda && x > 0) {
-                x -= VELOCIDADE_JOGADOR;
-            }
-            if (moverDireita && x < LARGURA_TELA - LARGURA_JOGADOR) {
-                x += VELOCIDADE_JOGADOR;
-            }
-            if (moverCima && y > 0) {
-                y -= VELOCIDADE_JOGADOR;
-            }
-            if (moverBaixo && y < ALTURA_TELA - ALTURA_JOGADOR) {
-                y += VELOCIDADE_JOGADOR;
-            }
-        }
-
-        public void atirar() {
-            int projetilX = x + LARGURA_JOGADOR / 2 - LARGURA_PROJETIL / 2;
-            int projetilY = y;
-            projeteis.add(new Projetil(projetilX, projetilY));
-        }
-
-        public void desenhar(Graphics g, SpaceInvadersGame observador) {
-            g.drawImage(imagemJogador, x, y, LARGURA_JOGADOR, ALTURA_JOGADOR, observador);
-        }
-
-        public boolean intersects(Inimigo inimigo) {
-            Rectangle retanguloJogador = new Rectangle(x, y, LARGURA_JOGADOR, ALTURA_JOGADOR);
-            Rectangle retanguloInimigo = new Rectangle(inimigo.getX(), inimigo.getY(), LARGURA_INIMIGO, ALTURA_INIMIGO);
-            return retanguloJogador.intersects(retanguloInimigo);
-        }
-
-        public void reset() {
-            x = LARGURA_TELA / 2 - LARGURA_JOGADOR / 2;
-            y = ALTURA_TELA - ALTURA_JOGADOR - 20;
-        }
-    }
-
-    class Projetil {
-        private int x;
-        private int y;
-
-        public Projetil(int x, int y) {
+        public GameObject(int x, int y) {
             this.x = x;
             this.y = y;
-        }
-
-        public void mover() {
-            y -= VELOCIDADE_PROJETIL;
-        }
-
-        public void desenhar(Graphics g) {
-            g.setColor(Color.BLUE);
-            g.fillRect(x, y, LARGURA_PROJETIL, ALTURA_PROJETIL);
-        }
-
-        public int getY() {
-            return y;
-        }
-
-        public boolean intersects(Inimigo inimigo) {
-            Rectangle retanguloProjetil = new Rectangle(x, y, LARGURA_PROJETIL, ALTURA_PROJETIL);
-            Rectangle retanguloInimigo = new Rectangle(inimigo.getX
-                    (), inimigo.getY(), LARGURA_INIMIGO, ALTURA_INIMIGO);
-            return retanguloProjetil.intersects(retanguloInimigo);
-        }
-    }
-
-    class Inimigo {
-        private int x;
-        private int y;
-
-        public Inimigo(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        public void mover() {
-            y += VELOCIDADE_QUEDA_INIMIGO;
-        }
-
-        public void desenhar(Graphics g, SpaceInvadersGame observador) {
-            g.drawImage(imagemInimigo, x, y, LARGURA_INIMIGO, ALTURA_INIMIGO, observador);
         }
 
         public int getX() {
             return x;
         }
 
+        public void setX(int x) {
+            this.x = x;
+        }
+
         public int getY() {
             return y;
+        }
+
+        public void setY(int y) {
+            this.y = y;
+        }
+
+        public abstract void mover();
+
+        public Rectangle getBounds(int largura, int altura) {
+            return new Rectangle(x, y, largura, altura);
+        }
+    }
+
+    class Player extends GameObject {
+        public Player(int x, int y) {
+            super(x, y);
+        }
+
+        public void mover() {
+            int deltaX = 0;
+            int deltaY = 0;
+
+            if (moverEsquerda && getX() > 0) {
+                deltaX -= VELOCIDADE_JOGADOR;
+            }
+
+            if (moverDireita && getX() < LARGURA_TELA - LARGURA_JOGADOR) {
+                deltaX += VELOCIDADE_JOGADOR;
+            }
+
+            if (moverCima && getY() > 0) {
+                deltaY -= VELOCIDADE_JOGADOR;
+            }
+
+            if (moverBaixo && getY() < ALTURA_TELA - ALTURA_JOGADOR) {
+                deltaY += VELOCIDADE_JOGADOR;
+            }
+
+            setX(getX() + deltaX);
+            setY(getY() + deltaY);
+        }
+
+        public void atirar() {
+            int projetilX = getX() + LARGURA_JOGADOR / 2 - LARGURA_PROJETIL / 2;
+            int projetilY = getY();
+            projeteis.add(new Projetil(projetilX, projetilY));
+        }
+
+        public void desenhar(Graphics g, SpaceInvadersGame observador) {
+            g.drawImage(imagemJogador, getX(), getY(), LARGURA_JOGADOR, ALTURA_JOGADOR, observador);
+        }
+
+        public boolean intersects(Inimigo inimigo) {
+            Rectangle retanguloJogador = getBounds(LARGURA_JOGADOR, ALTURA_JOGADOR);
+            Rectangle retanguloInimigo = inimigo.getBounds(LARGURA_INIMIGO, ALTURA_INIMIGO);
+            return retanguloJogador.intersects(retanguloInimigo);
+        }
+
+        public void reset() {
+            setX(LARGURA_TELA / 2 - LARGURA_JOGADOR / 2);
+            setY(ALTURA_TELA - ALTURA_JOGADOR - 20);
+        }
+    }
+
+    class Projetil extends GameObject {
+        public Projetil(int x, int y) {
+            super(x, y);
+        }
+
+        public void mover() {
+            setY(getY() - VELOCIDADE_PROJETIL);
+        }
+
+        public void desenhar(Graphics g) {
+            g.setColor(Color.BLUE);
+            g.fillRect(getX(), getY(), LARGURA_PROJETIL, ALTURA_PROJETIL);
+        }
+
+        public int getY() {
+            return super.getY();
+        }
+
+        public boolean intersects(Inimigo inimigo) {
+            Rectangle retanguloProjetil = getBounds(LARGURA_PROJETIL, ALTURA_PROJETIL);
+            Rectangle retanguloInimigo = inimigo.getBounds(LARGURA_INIMIGO, ALTURA_INIMIGO);
+            return retanguloProjetil.intersects(retanguloInimigo);
+        }
+    }
+
+    class Inimigo extends GameObject {
+        public Inimigo(int x, int y) {
+            super(x, y);
+        }
+
+        public void mover() {
+            setY(getY() + VELOCIDADE_QUEDA_INIMIGO);
+        }
+
+        public void desenhar(Graphics g, SpaceInvadersGame observador) {
+            g.drawImage(imagemInimigo, getX(), getY(), LARGURA_INIMIGO, ALTURA_INIMIGO, observador);
+        }
+
+        public int getX() {
+            return super.getX();
+        }
+
+        public int getY() {
+            return super.getY();
         }
     }
 
@@ -411,5 +428,50 @@ public class SpaceInvadersGame extends JPanel implements ActionListener, KeyList
         public int getPontos() {
             return pontos;
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        result.append("Nome do Jogo: ").append(NOME_JOGO).append("\n");
+        result.append("Pontuação: ").append(pontuacao).append("\n");
+        result.append("Vidas: ").append(vidas).append("\n");
+
+        if (!jogoIniciado) {
+            result.append("Pressione ENTER para iniciar\n");
+        }
+
+        if (jogoPausado && jogoEmAndamento) {
+            result.append("Jogo pausado. Pressione P para continuar\n");
+        }
+
+        if (jogoVencido) {
+            result.append("Você venceu! Pressione ENTER para jogar novamente\n");
+        }
+
+        if (!jogoEmAndamento && !jogoVencido && jogoIniciado) {
+            result.append("Fim do Jogo! Pressione ENTER para reiniciar\n");
+        }
+
+        return result.toString();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Space Invaders");
+            SpaceInvadersGame jogo = new SpaceInvadersGame();
+            frame.add(jogo);
+            frame.setSize(LARGURA_TELA, ALTURA_TELA);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setVisible(true);
+
+            // Adiciona um WindowListener para mostrar o toString() quando a janela é fechada
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    JOptionPane.showMessageDialog(frame, jogo.toString());
+                }
+            });
+        });
     }
 }
